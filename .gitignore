@@ -1,0 +1,12 @@
+# AWS Key Pairs
+*.pem
+*.ppk
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
