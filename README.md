@@ -76,8 +76,6 @@ aws cloudformation wait stack-create-complete \
   --stack-name vpc-stack --region us-east-1
 ```
 
-![VPC Stack Resources](screenshots/2.png)
-
 ## Step 3: Create EC2 Stack
 
 The EC2 stack creates:
@@ -98,12 +96,7 @@ aws cloudformation wait stack-create-complete \
   --stack-name ec2-stack --region us-east-1
 ```
 
-![EC2 Stack Resources](screenshots/3.png)
-
 ## Step 4: Verify Outputs
-
-![CloudFormation Stacks](screenshots/1.png)
-![VPC Resource Map](screenshots/6.png)
 
 ```bash
 # VPC Stack Outputs
@@ -129,8 +122,6 @@ Example:
 ```bash
 ssh -i vpc-keypair.pem ec2-user@34.201.9.218
 ```
-
-![EC2 Instance Running](screenshots/7.png)
 
 ## Cleanup
 
@@ -160,9 +151,6 @@ rm vpc-keypair.pem
 |-----------|---------|-------------|
 | InstanceType | t3.micro | EC2 instance type |
 | KeyPairName | vpc-keypair | Existing SSH key pair name |
-
-![EC2 Stack Parameters](screenshots/4.png)
-![EC2 Stack Template](screenshots/5.png)
 
 ## Exports from VPC Stack
 
