@@ -1,0 +1,184 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "VPC with Public/Private Subnets, Route Tables, IGW, and NACL"
+
+Parameters:
+  VPCCidr:
+    Description: "CIDR block for VPC"
+    Type: String
+    Default: "10.0.0.0/16"
+
+  PublicSubnetCidr:
+    Description: "CIDR block for Public Subnet"
+    Type: String
+    Default: "10.0.1.0/24"
+
+  PrivateSubnetCidr:
+    Description: "CIDR block for Private Subnet"
+    Type: String
+    Default: "10.0.2.0/24"
+
+  AvailabilityZone:
+    Description: "Availability Zone for Subnets"
+    Type: String
+    Default: "us-east-1a"
+
+Resources:
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCidr
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: "my-vpc"
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: "my-igw"
+
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PublicSubnetCidr
+      AvailabilityZone: !Ref AvailabilityZone
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: "public-subnet"
+
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: !Ref PrivateSubnetCidr
+      AvailabilityZone: !Ref AvailabilityZone
+      Tags:
+        - Key: Name
+          Value: "private-subnet"
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: "public-rt"
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: "private-rt"
+
+  PrivateSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet
+      RouteTableId: !Ref PrivateRouteTable
+
+  NetworkAcl:
+    Type: AWS::EC2::NetworkAcl
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: "my-nacl"
+
+  InboundNaclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NetworkAcl
+      RuleNumber: 100
+      Protocol: "-1"
+      RuleAction: "allow"
+      Egress: false
+      CidrBlock: "0.0.0.0/0"
+
+  OutboundNaclEntry:
+    Type: AWS::EC2::NetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref NetworkAcl
+      RuleNumber: 100
+      Protocol: "-1"
+      RuleAction: "allow"
+      Egress: true
+      CidrBlock: "0.0.0.0/0"
+
+  PublicSubnetNetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      NetworkAclId: !Ref NetworkAcl
+
+  PrivateSubnetNetworkAclAssociation:
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet
+      NetworkAclId: !Ref NetworkAcl
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: "my-sg"
+      GroupDescription: "Security group with SSH access"
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: "0.0.0.0/0"
+      Tags:
+        - Key: Name
+          Value: "my-sg"
+
+Outputs:
+  VPCId:
+    Description: "ID of the VPC"
+    Value: !Ref VPC
+    Export:
+      Name: "VPC-ID"
+
+  PublicSubnetId:
+    Description: "ID of the Public Subnet"
+    Value: !Ref PublicSubnet
+    Export:
+      Name: "Public-Subnet-ID"
+
+  PrivateSubnetId:
+    Description: "ID of the Private Subnet"
+    Value: !Ref PrivateSubnet
+    Export:
+      Name: "Private-Subnet-ID"
+
+  SecurityGroupId:
+    Description: "ID of the Security Group"
+    Value: !Ref SecurityGroup
+    Export:
+      Name: "Security-Group-ID"
